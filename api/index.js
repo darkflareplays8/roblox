@@ -11,10 +11,10 @@ app.use(express.json({ limit: '1mb' }));
 const ROBLOX_SECRET = process.env.ROBLOX_SECRET || 'mySuperSecretKey123';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-console.log('🤖 AI Survival Server starting...');
+console.log('🤖 AI To Survive! Server starting...');
 console.log('ROBLOX_SECRET:', !!ROBLOX_SECRET);
 console.log('GEMINI_API_KEY:', !!GEMINI_API_KEY);
-console.log('🎥 AI To Survive! SERVER LIVE');
+console.log('🎥 40+ SCENARIOS LIVE');
 
 function isValidRobloxRequest(req) {
     const authToken = req.headers['x-roblox-secret'];
@@ -22,6 +22,50 @@ function isValidRobloxRequest(req) {
     console.log('🔐 Auth:', isValid ? 'PASS' : 'FAIL');
     return isValid;
 }
+
+// 🔥 40 DIVERSE SURVIVAL SCENARIOS
+const scenarios = [
+    "Zombie outbreak in abandoned hospital during power outage",
+    "Alien invasion destroys all electronics worldwide",
+    "Nuclear meltdown contaminates your entire city",
+    "Volcanic eruption buries your town in ash",
+    "Global pandemic turns people into rage monsters",
+    "Massive earthquake cracks open sinkhole under your house",
+    "Toxic gas cloud from chemical plant explosion",
+    "Meteor shower ignites forest fires everywhere",
+    "Mutant animal swarm attacks suburban neighborhood",
+    "EMP blast fries all technology in 100 mile radius",
+    "Sharks circle blood-filled sinking luxury yacht",
+    "Cave collapse traps you with rising flood waters",
+    "Alien mothership beams up city skyscrapers",
+    "Rogue AI locks down skyscraper - no escape",
+    "Tsunami floods coastal city - buildings collapsing",
+    "Bio-engineered plague turns neighbors violent",
+    "Asteroid impact creates toxic dust storm",
+    "Arctic research station overrun by polar mutants",
+    "Underground bunker floods with contaminated water",
+    "Swarm of giant mutated insects invades city",
+    "Quantum rift spawns shadow creatures everywhere",
+    "Solar flare melts all electronics instantly",
+    "Cryo-virus outbreak freezes victims solid",
+    "Rogue nanobots disassemble entire neighborhood",
+    "Time dilation trap ages you 50 years instantly",
+    "Parasitic fungi infects entire apartment complex",
+    "Ghost ship appears in harbor - crew reanimates",
+    "Antimatter leak destabilizes local physics",
+    "Memory wipe virus erases survival instincts",
+    "Dimensional tear summons eldritch horrors",
+    "Global oxygen depletion - breathing becomes deadly",
+    "Swarm intelligence hijacks all human minds",
+    "Reality fracture spawns impossible geometries",
+    "Chronal storm rewinds time unpredictably",
+    "Neural parasite network controls city population",
+    "Black hole micro-singularity consumes suburb",
+    "Psionic storm amplifies everyone's worst fears",
+    "Matter replicator malfunction creates monsters",
+    "Gravitational anomaly crushes buildings inward",
+    "Entropy field accelerates decay everywhere"
+];
 
 app.post('/survival', async (req, res) => {
     console.log('📨 Request:', req.body);
@@ -35,12 +79,8 @@ app.post('/survival', async (req, res) => {
 
     if (generateScenario) {
         // 🎬 AI SCENARIO GENERATOR
-        const scenarioPrompt = `Generate ONE 10-15 word cinematic survival scenario:
-"Zombies swarm abandoned hospital corridors at midnight"
-"Volcano's 400°C ash cloud engulfs fleeing city"
-"Sharks circle blood trail from sinking luxury yacht"
-"Cave collapse traps you with rising flood waters"
-"Alien mothership silently beams up skyscrapers"
+        const scenarioPrompt = `Generate ONE 10-15 word cinematic survival scenario from these themes:
+Zombies, Volcano, Sharks, Cave collapse, Alien invasion, Nuclear, Earthquake, Toxic gas, Meteors, Mutants, EMP, Tsunami, Plague, Asteroid, Arctic mutants, Sinkhole, Nanobots, Parasites, Ghost ship, Black hole
 
 Return ONLY the scenario text:`;
 
@@ -64,32 +104,29 @@ Return ONLY the scenario text:`;
             scenarioText = scenarioText.replace(/["\n\r]/g, '').substring(0, 80);
             
             if (scenarioText.length < 8) {
-                const fallbacks = [
-                    "Zombies overrun hospital during midnight blackout",
-                    "Volcano buries city under glowing ash flows",
-                    "Sharks hunt sinking yacht survivors in blood sea", 
-                    "Cave floods rapidly after ceiling collapse",
-                    "Alien beams silently harvest city population"
-                ];
-                scenarioText = fallbacks[Math.floor(Math.random() * 5)];
+                scenarioText = scenarios[Math.floor(Math.random() * scenarios.length)];
             }
 
             console.log('🎬 Scenario:', scenarioText);
             res.json({ scenario: scenarioText });
 
         } catch {
-            res.json({ scenario: "Zombies swarm hospital corridors during blackout" });
+            res.json({ scenario: scenarios[Math.floor(Math.random() * scenarios.length)] });
         }
 
     } else {
         // 🎥 IMMERSIVE CINEMATIC STORY
         const sensoryBoosts = {
-            zombie: "moonlight glints off exposed bone, groans echo through corridors, floor sticky with fluids",
-            volcano: "400°C air shimmers violently, rocks glow orange-red, sulfur scorches every breath",
-            virus: "fluorescent lights buzz overhead, monitors flatline rhythmically, air tastes of chemicals",
-            shark: "saltwater stings eyes, blood clouds bloom crimson, dorsal fins slice dark waves",
-            cave: "water drips endlessly, pebbles crunch underfoot, darkness presses like physical weight",
-            alien: "hum vibrates bones, sky pulses unnatural green, metallic tang fills mouth"
+            zombie: "rotting flesh stench chokes air, guttural moans echo corridors, blood slicks tile floors",
+            volcano: "400°C air blisters skin, molten rocks hiss nearby, sulfur burns every breath",
+            alien: "eerie hum vibrates bones, sky pulses unnatural green, metallic ozone fills mouth",
+            nuclear: "crackling Geiger counters, acrid ionized air stings eyes, shadows burned into walls",
+            shark: "saltwater stings wounds, blood clouds water red, dorsal fins slice dark waves",
+            cave: "water drips endlessly, rocks grind shifting, darkness crushes like physical weight",
+            plague: "hack coughs echo halls, fever sweat soaks clothes, metallic blood taste lingers",
+            meteor: "sky burns orange-red, shockwaves shatter glass, ash chokes burning lungs",
+            emp: "electronics spark die, radios scream static, world plunges into silent dark",
+            mutant: "unnatural howls pierce night, twisted limbs snap branches, predatory eyes glow"
         };
 
         let sensoryBoost = '';
@@ -101,26 +138,22 @@ Return ONLY the scenario text:`;
             }
         }
 
-        const prompt = `Cinematic survival masterwork - 5 sentences of TOTAL IMMERSION:
+        const prompt = `Cinematic survival masterwork - EXACTLY 5 sentences of TOTAL IMMERSION:
 
-ATMOSPHERE: ${sensoryBoost}
+ATMOSPHERE: ${sensoryBoost || "apocalyptic chaos assaults every sense"}
 
-SCENARIO: ${scenario}
-PLAYER: "${response}"
+SCENARIO: "${scenario}"
+PLAYER ACTION: "${response}"
 
-2nd person. Every sense ALIVE:
-- Heartbeat pounds chest
-- Sweat drips into eyes  
-- Adrenaline sharpens vision
-- Chain reactions from your action
+2nd person perspective. Every sense ALIVE:
+• Heart pounds chest ribs
+• Sweat stings eyes painfully 
+• Muscles burn screaming fatigue
+• Action creates PERFECT chain reaction
 End EXACTLY: "**SURVIVED**" or "**DIED**"
 
 EXAMPLE:
-Ash chokes your lungs as 400°C pyroclastic flow roars closer. 
-You sprint for ocean but ground splits beneath. 
-Lava catches your legs in molten grip. 
-Screaming, you collapse into fiery death. 
-**DIED**`;
+Heartbeat slams ribs as groans fill corridor. Rotting fingers claw barricade - moonlight glints bone. Your bat CRACKS skull, gore sprays walls. Horde staggers, you hold position. **SURVIVED**`;
 
         try {
             const apiRes = await fetch(
@@ -146,17 +179,17 @@ Screaming, you collapse into fiery death.
             
             // Clean story text
             let story = fullText.replace(/\*\*(SURVIVED|DIED)\*\*/gi, '').trim();
-            story = story.replace(/\n\s*\n/g, '\n');  // Clean extra newlines
+            story = story.replace(/\n\s*\n/g, '\n');
 
             // QUALITY GUARANTEE
             if (story.length < 120) {
                 const survivedRand = Math.random() > 0.48;
                 const qualityStories = survivedRand ? [
-                    `Heartbeat slams chest as danger closes in relentlessly. Every sense sharpens - sweat stings eyes, breath burns lungs. Your desperate action triggers chain reaction of chaos. Against impossible odds, you snatch survival from jaws of death. Adrenaline surges through trembling limbs.`,
-                    `World narrows to survival instinct alone. Sensory overload - sounds deafening, smells overwhelming, touch electric. Split-second decision cascades through environment dramatically. Fate balances on knife-edge moment. You live - barely.`
+                    `Heartbeat thunders chest as ${scenarioLower} surrounds you completely. Every sense screams - sweat burns eyes, muscles scream fatigue. Your desperate ${response} triggers perfect survival chain. Danger brushes past inches away. Adrenaline peaks - you live.`,
+                    `World collapses to primal instinct only. Sensory overload assaults - sounds deafening, smells choking, skin electric. Split-second ${response} cascades perfectly through chaos. Fate tilts your direction. Survival snatched from catastrophe.`
                 ] : [
-                    `Every sense screams danger as situation spirals. Action creates unstoppable chain reaction against you. Timing betrays at critical instant. World closes in suffocatingly. Survival denied in final heartbeat.`,
-                    `Adrenaline peaks but proves insufficient. Environmental cascade overwhelms calculated strategy. Sensory details sharpen final moments cruelly. One irreversible misstep seals destiny. Darkness claims another victim.`
+                    `Every sense screams as ${scenarioLower} accelerates. Your ${response} creates unstoppable doom cascade. Timing betrays critical instant perfectly. World crushes inward suffocatingly. Survival denied final heartbeat.`,
+                    `Adrenaline surges insufficient against ${scenarioLower}. Environmental cascade overwhelms every ${response} attempt. Sensory details sharpen doom moments cruelly. One fatal cascade seals destiny completely. Darkness claims victim.`
                 ];
                 story = qualityStories[Math.floor(Math.random() * 2)];
             }
@@ -167,22 +200,20 @@ Screaming, you collapse into fiery death.
         } catch (error) {
             console.error('❌ Story fallback:', error.message);
             const survived = Math.random() > 0.5;
-            res.json({ 
-                story: survived ? 
-                    `Every sense alive, you execute perfect survival dance. Danger brushes past - heartbeat slows. You live.` :
-                    `Senses overload as world collapses inward. Survival slips through desperate fingers. End.`,
-                survived 
-            });
+            const fallback = survived ? 
+                `Every sense alive, your ${response} executes perfectly. Danger brushes past - heartbeat slows. You live.` :
+                `Senses overload as ${scenario} collapses inward. Survival slips through desperate fingers. End.`;
+            res.json({ story: fallback, survived });
         }
     }
 });
 
 app.get('/health', (req, res) => {
     res.json({ 
-        status: '🎥 AI To Survive! LIVE', 
+        status: '🤖 AI To Survive! LIVE', 
         gemini: !!GEMINI_API_KEY,
-        stories: 'immersive',
-        scenarios: 'dynamic'
+        scenarios: scenarios.length,
+        stories: 'immersive'
     });
 });
 
