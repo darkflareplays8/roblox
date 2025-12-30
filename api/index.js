@@ -15,14 +15,12 @@ console.log('Server starting...');
 console.log('ROBLOX_SECRET set:', !!ROBLOX_SECRET);
 console.log('GEMINI_API_KEY set:', !!GEMINI_API_KEY);
 
-// ✅ FIXED: Accept Studio (empty jobId) + Live servers
+// ✅ FIXED: Studio + Live servers
 function isValidRobloxRequest(req) {
   const authToken = req.headers['x-roblox-secret'];
   const jobId = req.body.jobId;
   
-  // Studio = empty jobId, Live = rbx-xxx
-  const validJobId = !jobId || jobId === 'rbx-test-job' || jobId.startsWith('rbx-');
-  
+  const validJobId = !jobId || jobId === 'rbx-studio-test' || jobId.startsWith('rbx-');
   const isValid = authToken === ROBLOX_SECRET && validJobId;
   
   console.log('Auth check:', {
@@ -38,25 +36,23 @@ function isValidRobloxRequest(req) {
 
 app.post('/survival', async (req, res) => {
   console.log('POST /survival received');
-  console.log('Headers:', req.headers);
   console.log('Body:', req.body);
   
   if (!isValidRobloxRequest(req)) {
     console.log('❌ AUTH FAILED');
-    return res.status(403).json({ error: 'Roblox servers only (check secret)' });
+    return res.status(403).json({ error: 'Roblox servers only' });
   }
 
   const { scenario, response } = req.body;
   console.log('Valid request - scenario:', scenario, 'response:', response);
   
   if (!scenario || !response) {
-    console.log('❌ Missing scenario/response');
     return res.status(400).json({ error: 'Missing scenario/response' });
   }
 
   const prompt = `Survival game narrator. Scenario: ${scenario}. Player action: ${response}.
 
-Continue story in 4-6 dramatic sentences. End with EXACTLY: "SURVIVED" or "DIED". Immersive only, no AI mentions.`;
+Continue story in 4-6 dramatic sentences. End with EXACTLY ONE LINE: "SURVIVED" or "DIED". Immersive only, no AI mentions.`;
 
   console.log('Calling Gemini...');
   try {
@@ -67,31 +63,53 @@ Continue story in 4-6 dramatic sentences. End with EXACTLY: "SURVIVED" or "DIED"
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 250 }
+          generationConfig: { maxOutputTokens: 300, temperature: 0.7 }
         })
       }
     );
 
-    console.log('Gemini status:', apiRes.status);
     const data = await apiRes.json();
-    console.log('Gemini response:', data);
+    console.log('Gemini raw response:', JSON.stringify(data).substring(0, 200));
     
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Story generation failed.';
-    const survived = text.toUpperCase().includes('SURVIVED');
-    const story = text.replace(/SURVIVED|DIED/gi, '').trim();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // ✅ FIXED: Better story parsing
+    const upperText = text.toUpperCase();
+    const survived = upperText.includes('SURVIVED');
+    let story = text;
+    
+    // Clean up outcome markers
+    story = story.replace(/\*\*(.*?)\*\*/g, '$1');  // Remove bold
+    story = story.replace(/SURVIVED|DIED/gi, '').trim();
+    
+    // Ensure story has content
+    if (story.length < 10) {
+      story = `The ${scenario.toLowerCase()} unfolds dramatically as you attempt "${response}". Your fate hangs in the balance...`;
+    }
 
-    console.log('✅ Story generated:', { survived, storyLength: story.length });
+    console.log('✅ Story generated:', { 
+      survived, 
+      storyPreview: story.substring(0, 50) + '...',
+      storyLength: story.length 
+    });
     
     res.json({ story, survived });
   } catch (error) {
-    console.error('❌ Gemini error:', error);
-    res.status(500).json({ error: 'AI service temporarily unavailable' });
+    console.error('❌ Gemini error:', error.message);
+    res.status(500).json({ 
+      story: 'AI service temporarily unavailable. Try again!',
+      survived: false 
+    });
   }
 });
 
 app.get('/health', (req, res) => {
-  console.log('Health check OK');
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    geminiKey: !!GEMINI_API_KEY,
+    robloxSecret: !!ROBLOX_SECRET
+  });
 });
 
 module.exports = app;
