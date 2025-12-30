@@ -1,124 +1,189 @@
 const express = require('express');
+const fetch = require('node-fetch');
 const cors = require('cors');
+const helmet = require('helmet');
+
 const app = express();
-
+app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
-const ROBLOX_SECRET = "mySuperSecretKey123";
-const PORT = process.env.PORT || 3000;
+const ROBLOX_SECRET = process.env.ROBLOX_SECRET || 'mySuperSecretKey123';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// 50+ survival scenarios
-const scenarios = [
-    "Zombie outbreak in abandoned hospital during power outage",
-    "Alien invasion destroys all electronics worldwide",
-    "Nuclear meltdown contaminates your entire city",
-    "Volcanic eruption buries your town in ash",
-    "Global pandemic turns people into rage monsters",
-    "Massive earthquake cracks open sinkhole under your house",
-    "Toxic gas cloud from chemical plant explosion",
-    "Meteor shower ignites forest fires everywhere",
-    "Mutant animal swarm attacks suburban neighborhood",
-    "EMP blast fries all technology in 100 mile radius"
-    // Add 40 more scenarios...
-];
+console.log('🤖 AI Survival Server starting...');
+console.log('ROBLOX_SECRET:', !!ROBLOX_SECRET);
+console.log('GEMINI_API_KEY:', !!GEMINI_API_KEY);
+console.log('🎥 AI To Survive! SERVER LIVE');
 
-app.post('/survival', (req, res) => {
-    const secret = req.headers['x-roblox-secret'];
-    
-    if (secret !== ROBLOX_SECRET) {
-        return res.status(401).json({ error: 'Unauthorized' });
+function isValidRobloxRequest(req) {
+    const authToken = req.headers['x-roblox-secret'];
+    const isValid = authToken === ROBLOX_SECRET;
+    console.log('🔐 Auth:', isValid ? 'PASS' : 'FAIL');
+    return isValid;
+}
+
+app.post('/survival', async (req, res) => {
+    console.log('📨 Request:', req.body);
+    console.log('📨', req.body.generateScenario ? 'SCENARIO' : 'STORY');
+
+    if (!isValidRobloxRequest(req)) {
+        return res.status(403).json({ error: 'Roblox servers only' });
     }
 
     const { scenario, response, generateScenario } = req.body;
 
     if (generateScenario) {
-        // Generate random scenario
-        const randomScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
-        res.json({ scenario: randomScenario });
-        return;
-    }
+        // 🎬 AI SCENARIO GENERATOR
+        const scenarioPrompt = `Generate ONE 10-15 word cinematic survival scenario:
+"Zombies swarm abandoned hospital corridors at midnight"
+"Volcano's 400°C ash cloud engulfs fleeing city"
+"Sharks circle blood trail from sinking luxury yacht"
+"Cave collapse traps you with rising flood waters"
+"Alien mothership silently beams up skyscrapers"
 
-    // CRITICAL: ANALYZE PLAYER RESPONSE
-    const playerAction = response.toLowerCase();
-    let survived = false;
-    let story = "";
+Return ONLY the scenario text:`;
 
-    // 60% BASE SURVIVAL + RESPONSE BOOST
-    const baseRoll = Math.random();
-    const responseScore = analyzeResponse(playerAction);
-    
-    survived = (baseRoll + responseScore) > 0.4; // 60% survival threshold
+        try {
+            const apiRes = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: scenarioPrompt }] }],
+                        generationConfig: { maxOutputTokens: 60, temperature: 0.85 }
+                    })
+                }
+            );
 
-    if (survived) {
-        story = generateSurvivalStory(scenario, playerAction);
+            const data = await apiRes.json();
+            let scenarioText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+
+            // Clean scenario
+            scenarioText = scenarioText.replace(/["\n\r]/g, '').substring(0, 80);
+            
+            if (scenarioText.length < 8) {
+                const fallbacks = [
+                    "Zombies overrun hospital during midnight blackout",
+                    "Volcano buries city under glowing ash flows",
+                    "Sharks hunt sinking yacht survivors in blood sea", 
+                    "Cave floods rapidly after ceiling collapse",
+                    "Alien beams silently harvest city population"
+                ];
+                scenarioText = fallbacks[Math.floor(Math.random() * 5)];
+            }
+
+            console.log('🎬 Scenario:', scenarioText);
+            res.json({ scenario: scenarioText });
+
+        } catch {
+            res.json({ scenario: "Zombies swarm hospital corridors during blackout" });
+        }
+
     } else {
-        story = generateDeathStory(scenario, playerAction);
+        // 🎥 IMMERSIVE CINEMATIC STORY
+        const sensoryBoosts = {
+            zombie: "moonlight glints off exposed bone, groans echo through corridors, floor sticky with fluids",
+            volcano: "400°C air shimmers violently, rocks glow orange-red, sulfur scorches every breath",
+            virus: "fluorescent lights buzz overhead, monitors flatline rhythmically, air tastes of chemicals",
+            shark: "saltwater stings eyes, blood clouds bloom crimson, dorsal fins slice dark waves",
+            cave: "water drips endlessly, pebbles crunch underfoot, darkness presses like physical weight",
+            alien: "hum vibrates bones, sky pulses unnatural green, metallic tang fills mouth"
+        };
+
+        let sensoryBoost = '';
+        const scenarioLower = scenario.toLowerCase();
+        for (const [key, boost] of Object.entries(sensoryBoosts)) {
+            if (scenarioLower.includes(key)) {
+                sensoryBoost = boost;
+                break;
+            }
+        }
+
+        const prompt = `Cinematic survival masterwork - 5 sentences of TOTAL IMMERSION:
+
+ATMOSPHERE: ${sensoryBoost}
+
+SCENARIO: ${scenario}
+PLAYER: "${response}"
+
+2nd person. Every sense ALIVE:
+- Heartbeat pounds chest
+- Sweat drips into eyes  
+- Adrenaline sharpens vision
+- Chain reactions from your action
+End EXACTLY: "**SURVIVED**" or "**DIED**"
+
+EXAMPLE:
+Ash chokes your lungs as 400°C pyroclastic flow roars closer. 
+You sprint for ocean but ground splits beneath. 
+Lava catches your legs in molten grip. 
+Screaming, you collapse into fiery death. 
+**DIED**`;
+
+        try {
+            const apiRes = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { 
+                            maxOutputTokens: 300, 
+                            temperature: 0.75,
+                            topP: 0.92 
+                        }
+                    })
+                }
+            );
+
+            const data = await apiRes.json();
+            let fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            
+            const survived = fullText.toUpperCase().includes('SURVIVED');
+            
+            // Clean story text
+            let story = fullText.replace(/\*\*(SURVIVED|DIED)\*\*/gi, '').trim();
+            story = story.replace(/\n\s*\n/g, '\n');  // Clean extra newlines
+
+            // QUALITY GUARANTEE
+            if (story.length < 120) {
+                const survivedRand = Math.random() > 0.48;
+                const qualityStories = survivedRand ? [
+                    `Heartbeat slams chest as danger closes in relentlessly. Every sense sharpens - sweat stings eyes, breath burns lungs. Your desperate action triggers chain reaction of chaos. Against impossible odds, you snatch survival from jaws of death. Adrenaline surges through trembling limbs.`,
+                    `World narrows to survival instinct alone. Sensory overload - sounds deafening, smells overwhelming, touch electric. Split-second decision cascades through environment dramatically. Fate balances on knife-edge moment. You live - barely.`
+                ] : [
+                    `Every sense screams danger as situation spirals. Action creates unstoppable chain reaction against you. Timing betrays at critical instant. World closes in suffocatingly. Survival denied in final heartbeat.`,
+                    `Adrenaline peaks but proves insufficient. Environmental cascade overwhelms calculated strategy. Sensory details sharpen final moments cruelly. One irreversible misstep seals destiny. Darkness claims another victim.`
+                ];
+                story = qualityStories[Math.floor(Math.random() * 2)];
+            }
+
+            console.log('🎥 CINEMATIC:', { survived, length: story.length });
+            res.json({ story, survived });
+
+        } catch (error) {
+            console.error('❌ Story fallback:', error.message);
+            const survived = Math.random() > 0.5;
+            res.json({ 
+                story: survived ? 
+                    `Every sense alive, you execute perfect survival dance. Danger brushes past - heartbeat slows. You live.` :
+                    `Senses overload as world collapses inward. Survival slips through desperate fingers. End.`,
+                survived 
+            });
+        }
     }
-
-    console.log(`Player: "${playerAction}" → Score: ${responseScore.toFixed(2)} → ${survived ? 'SURVIVED' : 'DIED'}`);
-    
-    res.json({ story, survived });
 });
 
-function analyzeResponse(action) {
-    // SCORE PLAYER'S SURVIVAL STRATEGY (0.0 - 0.6 boost)
-    let score = 0;
-    
-    // KEYWORDS THAT BOOST SURVIVAL
-    if (action.includes('barricade') || action.includes('board up')) score += 0.15;
-    if (action.includes('weapon') || action.includes('bat') || action.includes('knife')) score += 0.12;
-    if (action.includes('hide') || action.includes('attic') || action.includes('closet')) score += 0.10;
-    if (action.includes('food') || action.includes('water') || action.includes('supplies')) score += 0.10;
-    if (action.includes('quiet') || action.includes('silent') || action.includes('noise')) score += 0.08;
-    if (action.includes('neighbor') || action.includes('group')) score -= 0.10; // Risky!
-    if (action.includes('run') || action.includes('street')) score -= 0.08; // Exposed!
-    
-    return Math.min(score, 0.6); // Cap boost
-}
-
-function generateSurvivalStory(scenario, action) {
-    const survivalReasons = [
-        `Your ${action.includes('barricade') ? 'barricades held firm' : 'clever defenses'} kept them out!`,
-        `The ${action.includes('weapon') ? 'improvised weapons' : 'smart traps'} you made decimated the horde!`,
-        `${action.includes('hide') ? 'Perfect hiding spot' : 'Strategic position'} - they never found you!`,
-        `Your ${action.includes('food') ? 'stockpile lasted' : 'resource management'} kept you alive for days!`
-    ];
-    
-    return `🔥 EPIC SURVIVAL! 🔥
-
-${scenario.toUpperCase()}
-
-"Your plan: ${action}
-
-${survivalReasons[Math.floor(Math.random() * survivalReasons.length)]}
-
-You survived 72 hours. Dawn breaks. You're alive... for now.
-
-NEXT CHALLENGE AWAITS...`;
-}
-
-function generateDeathStory(scenario, action) {
-    const deathReasons = [
-        `The ${action.includes('neighbor') ? 'neighbors betrayed you' : 'horde overwhelmed your weak defenses'}.`,
-        `Your ${action.includes('run') ? 'dash into the street exposed you' : 'position was compromised'}.`,
-        `You ran out of ${action.includes('food') ? 'supplies too quickly' : 'luck'}. Game over.`,
-        `A single ${action.includes('noise') ? 'noise gave you away' : 'mistake'} sealed your fate.`
-    ];
-    
-    return `💀 FATAL MISTAKE 💀
-
-${scenario.toUpperCase()}
-
-"Your plan: ${action}
-
-${deathReasons[Math.floor(Math.random() * deathReasons.length)]}
-
-You lasted ${Math.floor(Math.random() * 24) + 1} hours.
-
-TRY AGAIN - BETTER STRATEGY REQUIRED!`;
-}
-
-app.listen(PORT, () => {
-    console.log(`🚀 Survival AI Server running on port ${PORT}`);
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: '🎥 AI To Survive! LIVE', 
+        gemini: !!GEMINI_API_KEY,
+        stories: 'immersive',
+        scenarios: 'dynamic'
+    });
 });
+
+module.exports = app;
