@@ -100,7 +100,6 @@ Return ONLY the scenario text:`;
             const data = await apiRes.json();
             let scenarioText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 
-            // Clean scenario
             scenarioText = scenarioText.replace(/["\n\r]/g, '').substring(0, 80);
             
             if (scenarioText.length < 8) {
@@ -115,7 +114,7 @@ Return ONLY the scenario text:`;
         }
 
     } else {
-        // 🎥 IMMERSIVE CINEMATIC STORY
+        // 🎥 IMMERSIVE CINEMATIC STORY - NATURAL INTEGRATION
         const sensoryBoosts = {
             zombie: "rotting flesh stench chokes air, guttural moans echo corridors, blood slicks tile floors",
             volcano: "400°C air blisters skin, molten rocks hiss nearby, sulfur burns every breath",
@@ -138,22 +137,28 @@ Return ONLY the scenario text:`;
             }
         }
 
-        const prompt = `Cinematic survival masterwork - EXACTLY 5 sentences of TOTAL IMMERSION:
-
-ATMOSPHERE: ${sensoryBoost || "apocalyptic chaos assaults every sense"}
+        // 🔥 FIXED PROMPT - NATURAL ACTION INTEGRATION
+        const prompt = `Cinematic survival - EXACTLY 5 sentences. 2nd person immersion:
 
 SCENARIO: "${scenario}"
 PLAYER ACTION: "${response}"
 
-2nd person perspective. Every sense ALIVE:
-• Heart pounds chest ribs
-• Sweat stings eyes painfully 
-• Muscles burn screaming fatigue
-• Action creates PERFECT chain reaction
-End EXACTLY: "**SURVIVED**" or "**DIED**"
+NATURALLY weave action into story. NO "Your [action]" phrasing.
 
-EXAMPLE:
-Heartbeat slams ribs as groans fill corridor. Rotting fingers claw barricade - moonlight glints bone. Your bat CRACKS skull, gore sprays walls. Horde staggers, you hold position. **SURVIVED**`;
+Every sense alive:
+• Heart slams ribs
+• Sweat burns eyes
+• Action triggers chain reaction
+End: "**SURVIVED**" or "**DIED**"
+
+EXAMPLE (barricade doors):
+Heartbeat thunders as groans fill corridor. Fingers claw wood - barricade CREAKS dangerously. Nails splinter through gaps inches from face. Sweat stings eyes but chairs JAM underneath perfectly. Horde retreats at dawn. **SURVIVED**
+
+EXAMPLE (run outside):  
+Adrenaline surges as door flies open. Street explodes with moans - dozens turn instantly. Legs pump concrete but they're faster. Teeth sink into calf mid-stride. World fades to black. **DIED**
+
+EXAMPLE (swing bat):
+Rotting jaw CRACKS under desperate swing. Gore sprays walls as body staggers back. Second lunges - bat WHISTLES through air missing. Horde surges through gap. Teeth find throat. **DIED**`;
 
         try {
             const apiRes = await fetch(
@@ -177,19 +182,18 @@ Heartbeat slams ribs as groans fill corridor. Rotting fingers claw barricade - m
             
             const survived = fullText.toUpperCase().includes('SURVIVED');
             
-            // Clean story text
             let story = fullText.replace(/\*\*(SURVIVED|DIED)\*\*/gi, '').trim();
             story = story.replace(/\n\s*\n/g, '\n');
 
-            // QUALITY GUARANTEE
+            // 🔥 FIXED QUALITY FALLBACKS - NATURAL INTEGRATION
             if (story.length < 120) {
                 const survivedRand = Math.random() > 0.48;
                 const qualityStories = survivedRand ? [
-                    `Heartbeat thunders chest as ${scenarioLower} surrounds you completely. Every sense screams - sweat burns eyes, muscles scream fatigue. Your desperate ${response} triggers perfect survival chain. Danger brushes past inches away. Adrenaline peaks - you live.`,
-                    `World collapses to primal instinct only. Sensory overload assaults - sounds deafening, smells choking, skin electric. Split-second ${response} cascades perfectly through chaos. Fate tilts your direction. Survival snatched from catastrophe.`
+                    `Heartbeat slams ribs as ${scenarioLower.split(' ')[0]} surrounds completely. Sweat burns eyes, desperate struggle triggers perfect survival chain. Danger brushes past inches away. Adrenaline fades - you breathe.`,
+                    `Every sense screams through ${scenarioLower.split(' ')[0]} chaos. Split-second instinct cascades perfectly through environment. World holds breath with you. Survival snatched from jaws.`
                 ] : [
-                    `Every sense screams as ${scenarioLower} accelerates. Your ${response} creates unstoppable doom cascade. Timing betrays critical instant perfectly. World crushes inward suffocatingly. Survival denied final heartbeat.`,
-                    `Adrenaline surges insufficient against ${scenarioLower}. Environmental cascade overwhelms every ${response} attempt. Sensory details sharpen doom moments cruelly. One fatal cascade seals destiny completely. Darkness claims victim.`
+                    `Senses overload as ${scenarioLower.split(' ')[0]} accelerates viciously. Desperate struggle creates unstoppable doom cascade. Timing betrays completely. World crushes inward. End comes swiftly.`,
+                    `Adrenaline peaks against ${scenarioLower.split(' ')[0]} fury. Every effort feeds unstoppable chain reaction. Sensory details sharpen final moments. Darkness falls completely.`
                 ];
                 story = qualityStories[Math.floor(Math.random() * 2)];
             }
@@ -201,8 +205,8 @@ Heartbeat slams ribs as groans fill corridor. Rotting fingers claw barricade - m
             console.error('❌ Story fallback:', error.message);
             const survived = Math.random() > 0.5;
             const fallback = survived ? 
-                `Every sense alive, your ${response} executes perfectly. Danger brushes past - heartbeat slows. You live.` :
-                `Senses overload as ${scenario} collapses inward. Survival slips through desperate fingers. End.`;
+                `Every sense alive as danger surrounds completely. Desperate action executes perfectly through chaos. Danger brushes past inches away. Heartbeat slows - you live.` :
+                `Senses overload as ${scenarioLower} collapses inward. Struggle feeds unstoppable chain reaction. Survival slips through desperate fingers completely. End.`;
             res.json({ story: fallback, survived });
         }
     }
